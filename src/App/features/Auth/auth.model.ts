@@ -4,7 +4,7 @@ import { IAuthRegister } from "./auth.interface";
 
 const userSchema = new Schema<IAuthRegister>({
     name: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     isDeleted: { type: Boolean, default: false },
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], required: true },
@@ -26,11 +26,6 @@ userSchema.set('toJSON', {
 });
 
 
-// userSchema.pre('find', function (next) {
-//     this.find({ isDeleted: false });
-//     this.find({ status: 'active' });
-//     next();
-// })
 const userModel = model<IAuthRegister>('User', userSchema);
 
 export default userModel;

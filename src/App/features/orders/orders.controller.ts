@@ -5,16 +5,7 @@ import { orderService } from './orders.service';
 
 
 
-const addToCart = CatchAsync(async (req: Request, res: Response) => {
 
-  const result = await orderService.addToCartIntoDb(req.body);
-  res.status(200).json({
-    message: 'Item  has been added to cart',
-    success: true,
-    status: 200,
-    data: result,
-  });
-})
 const createOrder = CatchAsync(async (req: Request, res: Response) => {
 
   const result = await orderService.createOrderIntoDb(req.body);
@@ -63,15 +54,7 @@ const getAllOrders = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   })
 })
-const removeItemFromCart = CatchAsync(async (req: Request, res: Response) => {
-  const result = await orderService.removeItemFromCart(req.params.id)
-  res.status(200).json({
-    message: 'Order cancelled successfully',
-    success: true,
-    status: 200,
-    data: result,
-  })
-})
+
 const deleteOrder = CatchAsync(async (req: Request, res: Response) => {
   const result = await orderService.deleteOrderFromDb(req.params.id)
   res.status(200).json({
@@ -82,24 +65,8 @@ const deleteOrder = CatchAsync(async (req: Request, res: Response) => {
   })
 })
 
-const generateRevenue = CatchAsync(async (req: Request, res: Response) => {
-  const result = await orderService.generateRevenueFromDb()
-  res.status(200).json({
-    message: 'Revenue calculated successfully',
-    success: true,
-    status: 200,
-    data: result,
-  })
-})
-const getSingleUserCart = CatchAsync(async (req: Request, res: Response) => {
-  const result = await orderService.getSingleUserCartFromDb(req.params.email)
-  res.status(200).json({
-    message: 'Order retrieved successfully',
-    success: true,
-    status: 200,
-    data: result,
-  })
-})
+
+
 const getSingleOrderCart = CatchAsync(async (req: Request, res: Response) => {
   const result = await orderService.getSingleOrderFromDb(req.params.orderId)
   res.status(200).json({
@@ -131,6 +98,6 @@ const verifyPayment = CatchAsync(async (req: Request, res: Response) => {
   })
 })
 export const orderController = {
-  addToCart, getAllOrdersOfUserDashboard,
-  generateRevenue, createOrder, getSingleOrderCart, getAllOrdersOfUser, getSingleUserCart, removeItemFromCart, makePayment, verifyPayment, getAllOrders, deleteOrder, getSingleOrdersOfUser
+  getAllOrdersOfUserDashboard,
+  createOrder, getSingleOrderCart, getAllOrdersOfUser, makePayment, verifyPayment, getAllOrders, deleteOrder, getSingleOrdersOfUser
 };
