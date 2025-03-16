@@ -1,10 +1,11 @@
 
 export const MedicineCategoriesArray = [
+  "Medicine",
+  "Wellness",
+  "Healthcare",
+  "Personal Care",
   "Prescription Medicines",
-  "Over-the-Counter (OTC) Medicines",
-  "Supplements & Vitamins",
-  "Personal Care & Wellness",
-  "Ayurvedic & Herbal Medicines"
+  "Supplements & Vitamins"
 ] as const;
 
 export interface IProduct {
@@ -12,10 +13,11 @@ export interface IProduct {
   description: string;
   advices: string[];
   price: number;
-  stock: number;
-  category: "Prescription Medicines" | "Over-the-Counter (OTC) Medicines" | "Supplements & Vitamins" | "Personal Care & Wellness" | "Ayurvedic & Herbal Medicines";
+  inStock: boolean;
+  quantity: number;
+  category: "Prescription Medicines" | "Personal Care" | "Supplements & Vitamins" | "Wellness" | "Healthcare" | "Medicine";
   rating: number;
-  imageUrls: string[];
+  profileImage: string;
   manufacturer: string;
   expiryDate: string;
   requiresPrescription: boolean;

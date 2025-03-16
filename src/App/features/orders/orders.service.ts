@@ -2,123 +2,32 @@
 import mongoose from "mongoose";
 import { PaymentResponse, VerificationResponse } from "Shurjopay";
 import AppError from "../../Error/AppError";
-import { productsModel } from "../products/products.model";
+
+import { CartModel } from "../carts/carts.model";
 import { makePayment, verifyPayment } from "./order.utils";
-import { ICart, SurjoPayload } from "./orders.interface";
-import { Models } from "./orders.model";
-
-
-const addToCartIntoDb = async (payload: ICart) => {
-    const productId = payload.products.product;
-
-    const productDataList = await productsModel.find({ _id: productId });
-
-    if (!productDataList.length) {
-        return {
-            status: 404,
-            message: 'Product not found',
-            success: false,
-        };
-    }
-
-    const insufficientStock = productDataList.filter((requestedProduct) => {
-
-        const productData = productDataList.find((product) => product._id === requestedProduct._id);
-
-
-        if (!productData || !productData.inStock) {
-            return true;
-        }
-
-
-        if (requestedProduct.quantity > productData.quantity) {
-            return true;
-        }
-
-        return false;
-    });
-
-    if (insufficientStock.length > 0) {
-        return {
-            status: 400,
-            message: `Insufficient stock for product(s): ${insufficientStock.map(item => item.name).join(', ')}`,
-            success: false,
-        };
-    }
+import { SurjoPayload } from "./orders.interface";
+import { OrderModel } from "./orders.model";
 
 
 
 
-    productDataList.map((productData) => {
-        const cartProduct = payload.products.product === productData._id;
-        if (cartProduct) {
-            const updatedQuantity = productData.quantity - payload.products.quantity;
-            return productsModel.findByIdAndUpdate(productData._id, {
-                quantity: updatedQuantity,
-                inStock: updatedQuantity > 0,
-            });
-        }
-    });
-    const result = await Models.CartModel.create(payload);
-
-    return result;
 
 
-};
 
 
-const generateRevenueFromDb = async () => {
-    const result = await Models.CartModel.aggregate([
-        {
-            $addFields: {
-                total: { $multiply: ["$totalPrice", "$products.quantity"] },
-            },
-        },
-        {
-            $group: {
-                _id: null,
-                totalRevenue: { $sum: "$total" },
-            },
-        },
-    ]);
-
-    if (result.length > 0) {
-        return {
-            message: "Revenue calculated successfully",
-            success: true,
-            data: { totalRevenue: result[0].totalRevenue },
-        };
-    } else {
-        return {
-            message: "No revenue data found",
-            success: true,
-            data: { totalRevenue: 0 },
-        };
-    }
-};
-
-
-const getSingleUserCartFromDb = async (userEmail: string) => {
-
-    const result = await Models.CartModel.find({ email: userEmail }).populate('products.product').populate('userId')
-
-    return result
-
-
-}
 const getSingleOrderFromDb = async (orderId: string) => {
 
-    const result = await Models.OrderModel.findById(orderId).populate('products')
+    const result = await OrderModel.findById(orderId).populate('products')
     return result
 }
 const getSingleOrdersOfUserFromDb = async (OrderId: string) => {
 
-    const result = await Models.OrderModel.findOne({ OrderId: OrderId }).populate('products')
+    const result = await OrderModel.findOne({ OrderId: OrderId }).populate('products')
     return result
 }
 const getAllOrdersOfUserDashboardIntoDb = async (email: string) => {
 
-    const result = await Models.OrderModel.find({ userEmail: email }).populate('products')
+    const result = await OrderModel.find({ userEmail: email }).populate('products')
     return result
 }
 
@@ -127,7 +36,7 @@ const createOrderIntoDb = async (payload: { userEmail: string, totalPrice: numbe
 
     const userEmail = payload.userEmail
 
-    const allCarts = await Models.CartModel.find({ email: userEmail })
+    const allCarts = await CartModel.find({ email: userEmail })
 
     let products: any[] = [];
 
@@ -139,7 +48,7 @@ const createOrderIntoDb = async (payload: { userEmail: string, totalPrice: numbe
         quantity: payload.quantity,
         products: products,
     }
-    const result = await Models.OrderModel.create(orderData)
+    const result = await OrderModel.create(orderData)
     return result
 
 }
@@ -157,7 +66,7 @@ const makePaymentIntoDb = async (payload: SurjoPayload, client: string): Promise
     const payment = await makePayment(surjoPayload) as PaymentResponse
     if (payment?.transactionStatus) {
 
-        await Models.OrderModel.findByIdAndUpdate(payload.order_id, {
+        await OrderModel.findByIdAndUpdate(payload.order_id, {
             payment:
             {
                 status: 'Initiated',
@@ -167,7 +76,7 @@ const makePaymentIntoDb = async (payload: SurjoPayload, client: string): Promise
             { new: true, runValidators: true })
     }
     if (payment?.transactionStatus) {
-        await Models.OrderModel.updateOne({
+        await OrderModel.updateOne({
             transaction: {
                 id: payment.sp_order_id,
                 transactionStatus: payment.transactionStatus,
@@ -176,7 +85,7 @@ const makePaymentIntoDb = async (payload: SurjoPayload, client: string): Promise
     }
 
     if (payment?.transactionStatus === 'Completed') {
-        await Models.OrderModel.findByIdAndUpdate(payload.order_id, { paymentStatus: 'Initiated' })
+        await OrderModel.findByIdAndUpdate(payload.order_id, { paymentStatus: 'Initiated' })
     }
     return payment.checkout_url
 
@@ -190,7 +99,7 @@ const verifyPaymentIntoDb = async (orderId: string) => {
         session.startTransaction();
         const result = await verifyPayment(orderId) as VerificationResponse[]
 
-        await Models.OrderModel.updateOne({ OrderId: result?.[0]?.order_id }, {
+        await OrderModel.updateOne({ OrderId: result?.[0]?.order_id }, {
             payment: {
                 status: result?.[0]?.bank_status === 'Success' ? "Paid" : result?.[0]?.bank_status === 'Failed' ? "Pending" : result?.[0]?.bank_status === 'Cancel' ? "Cancelled" : "Initiated",
                 orderId,
@@ -216,22 +125,9 @@ const verifyPaymentIntoDb = async (orderId: string) => {
 }
 
 
-const removeItemFromCart = async (orderId: string) => {
-
-    const deletedCart = await Models.CartModel.findByIdAndDelete(orderId);
-    if (!deletedCart) {
-        return {
-            success: false,
-            message: "Cart item not found",
-        };
-    }
-    return deletedCart
-
-
-}
 const deleteOrderFromDb = async (orderId: string) => {
 
-    const deletedOrder = await Models.OrderModel.findByIdAndDelete(orderId);
+    const deletedOrder = await OrderModel.findByIdAndDelete(orderId);
     if (!deletedOrder) {
         return {
             success: false,
@@ -243,21 +139,21 @@ const deleteOrderFromDb = async (orderId: string) => {
 }
 
 const getAllOrdersOfUserIntoDb = async (orderId: string) => {
-    const result = await Models.OrderModel.findById(orderId).populate('products')
+    const result = await OrderModel.findById(orderId).populate('products')
     return result
 }
 const getAllOrdersIntoDb = async () => {
-    const result = await Models.OrderModel.find().populate('products')
+    const result = await OrderModel.find().populate('products')
 
     return result
 }
 
 export const orderService = {
-    addToCartIntoDb, getAllOrdersOfUserDashboardIntoDb,
-    generateRevenueFromDb,
-    getSingleUserCartFromDb,
+    getAllOrdersOfUserDashboardIntoDb,
+
+
     getAllOrdersOfUserIntoDb,
-    removeItemFromCart,
+
     makePaymentIntoDb,
     verifyPaymentIntoDb,
     createOrderIntoDb,

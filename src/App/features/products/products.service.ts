@@ -8,22 +8,16 @@ import { ProductModel } from "./products.model";
 
 
 
-const createProductIntoDb = async (files: any, payload: IProduct) => {
+const createProductIntoDb = async (file: any, payload: IProduct) => {
 
 
-    const uploadedImageUrls: string[] = [];
-    if (files.length > 0) {
 
-        for (const file of files) {
-            const imageName = `${payload?.name}+${Date.now()}`;
-            const path = file.buffer;
+    if (file) {
+        const imageName = `${payload?.name}+${Date.now()}`;
+        const path = file?.buffer;
+        const uploadResponse = await UploadImageToCloudinary(imageName, path);
+        payload.profileImage = uploadResponse.url;
 
-
-            const uploadResponse = await UploadImageToCloudinary(imageName, path);
-
-            uploadedImageUrls.push(uploadResponse.url);
-        }
-        payload.imageUrls = uploadedImageUrls;
     }
 
     const result = await ProductModel.create(payload)

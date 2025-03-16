@@ -11,9 +11,9 @@ const productsRouter = Router()
 productsRouter.post(
     '/',
     auth('admin'),
-    upload.array('imageUrls', 5),
+    upload.single('profileImage'),
     (req, res, next) => {
-        req.body.imageUrls = req.files;
+        req.body.profileImage = req.file;
         next();
     },
     validateRequest(createProductsValidationSchema),
@@ -22,9 +22,9 @@ productsRouter.post(
 
 productsRouter.get('/', productsController.getAllproducts)
 
-productsRouter.get('/admin', productsController.getAllproductsForAdmin)
+productsRouter.get('/admin', auth('admin'), productsController.getAllproductsForAdmin)
 
-productsRouter.get('/:productId', productsController.getSingleproduct)
+productsRouter.get('/:productId', auth('user', 'admin'), productsController.getSingleproduct)
 
 productsRouter.patch('/:productId', auth('admin'),
     validateRequest(updateProductsValidationSchema), productsController.updateProduct)

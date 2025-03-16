@@ -1,24 +1,11 @@
-import { Types } from "mongoose";
 
-
-
-export interface ICart {
-  email: string;
-  userId: Types.ObjectId;
-  products: {
-    product: Types.ObjectId;
-    quantity: number;
-  };
-
-  totalPrice: number;
-}
 
 export interface IOrder {
   userEmail: string;
   totalPrice: number;
   quantity: number
   products: string[];
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  shipmentStatus: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   OrderId: string;
   payment: {
     status: 'Pending' | 'Paid' | 'Initiated' | 'Cancelled' | 'Failed';

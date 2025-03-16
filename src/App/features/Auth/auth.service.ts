@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-undef */
+
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from "../../config";
 import AppError from "../../Error/AppError";
+import sendResetPasswordEmail from "../../utils/nodeMailer.config";
 import UploadImageToCloudinary from "../../utils/UploadImageToCloudinary";
 import { IAuth, IAuthChangePassword, IAuthRegister, IAuthRequestPasswordReset } from "./auth.interface";
 import userModel from "./auth.model";
-import bcrypt from 'bcryptjs';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import crypto from 'crypto';
-import sendResetPasswordEmail from "../../utils/nodeMailer.config";
 
 
 const register = async (file: any, payload: IAuthRegister) => {
@@ -22,8 +22,8 @@ const register = async (file: any, payload: IAuthRegister) => {
 
     if (file) {
         const imageName = `${payload.name}-${payload.email}`;
-        const uploadedImageUrl = await UploadImageToCloudinary(imageName, file.buffer);
-        payload.profileImage = uploadedImageUrl.url;
+        const uploadedprofileImage = await UploadImageToCloudinary(imageName, file.buffer);
+        payload.profileImage = uploadedprofileImage.url;
     }
 
     payload.password = await bcrypt.hash(password, Number(config.bcrypt_salt_rounds));
