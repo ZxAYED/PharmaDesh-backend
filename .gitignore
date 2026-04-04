@@ -2,3 +2,4 @@ node_modules/
 .gitignore
 .vercel
 config.bat
+.env
